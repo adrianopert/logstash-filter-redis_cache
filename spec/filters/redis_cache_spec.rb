@@ -1,10 +1,15 @@
-require 'spec_helper'
+# encoding: utf-8
+require 'logstash/devutils/rspec/spec_helper'
 require "logstash/filters/redis_cache"
+require 'redis'
+
+redis = Redis.new(:host => "127.0.0.1", :db => 1)
+# fill the redis cache with known values
+redis.set("192.168.1.10", "{\"host\":\"la numero diez\",\"usuario\":\"cesar diaz\"}")
 
 describe LogStash::Filters::Redis_Cache do
   describe "Agregamos campos del cache" do
-    let(:config) do <<-CONFIG
-			
+    config <<-CONFIG			
       filter {
         redis_cache {
           key => "ip"
@@ -12,11 +17,11 @@ describe LogStash::Filters::Redis_Cache do
         }
       }
     CONFIG
-    end
 
-#    sample("message" => "some text") do
-#      expect(subject).to include("message")
-#      expect(subject['message']).to eq('Hello World')
-#    end
-  end
+		sample("ip" => "192.168.1.10") do
+			insist { subject["ip"] } == "192.168.1.10"
+			insist { subject["usuario"] } == "cesar diaz"
+			insist { subject["host"] }.nil?
+		end
+	end
 end

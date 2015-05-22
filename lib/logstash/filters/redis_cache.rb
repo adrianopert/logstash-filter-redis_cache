@@ -58,22 +58,18 @@ class LogStash::Filters::Redis_Cache < LogStash::Filters::Base
   def register
     # Add instance variables 
 		require "redis"
-		@logger.info( "INICIANDO" )
 		@redis = nil
   end # def register
 
   public
   def filter(event)
-#    return unless filter?(event)
+    return unless filter?(event)
 
 		key = event[@key]
-		@logger.info( "Clave en el evento", :key => key )
     begin
       @redis ||= connect
       payload = @redis.get(key)
 
-			@logger.info( "PAYLOAD", :cached => payload )
-			event["cached"] = payload
     rescue => e
       @logger.warn("Failed to get cached fields from Redis", :event => event,
                    :identity => identity, :exception => e,
@@ -85,9 +81,7 @@ class LogStash::Filters::Redis_Cache < LogStash::Filters::Base
 
     begin
       # Get only the keys listed in @fields (first order keys). Prepare the event with some filters to assure the existence of the required fields.
-      # payload = LogStash::Json.dump(event.to_hash.select { |k, v| @fields.include?(k) } )
-			#LogStash::Json.load( payload ).each { |k, v|  event[k] = v if @fields.include?(k) }
-			event["json_cached"] =  LogStash::Json.load( payload )
+			LogStash::Json.load( payload ).each { |k, v|  event[k] = v if @fields.include?(k) }
     rescue LogStash::Json::ParserError, ArgumentError
       puts "FAILUREDECODING"
       @logger.error("Failed to converting JSON cached fields.",
