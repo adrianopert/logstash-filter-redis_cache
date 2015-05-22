@@ -13,7 +13,7 @@ describe LogStash::Filters::Redis_Cache do
       filter {
         redis_cache {
           key => "ip"
-					fields => ["usuario"]
+					fields => ["usuario", "sin_cargar"]
         }
       }
     CONFIG
@@ -21,6 +21,16 @@ describe LogStash::Filters::Redis_Cache do
 		sample("ip" => "192.168.1.10") do
 			insist { subject["ip"] } == "192.168.1.10"
 			insist { subject["usuario"] } == "cesar diaz"
+			# field miss in cache
+			insist { subject["sin_cargar"] }.nil?
+			# existent field in cache, but not required in configuration
+			insist { subject["host"] }.nil?
+		end
+		# cache miss
+		sample("ip" => "192.168.1.x") do
+			insist { subject["ip"] } == "192.168.1.x"
+			insist { subject["usuario"] }.nil?
+			insist { subject["sin_cargar"] }.nil?
 			insist { subject["host"] }.nil?
 		end
 	end
